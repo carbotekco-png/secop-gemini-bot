@@ -1,0 +1,26 @@
+[
+  {
+    "id": "Smartel",
+    "nombre": "Empresa de Telecomunicaciones y Cloud",
+    "activa": true,
+    "presupuesto_min": 50000000,
+    "presupuesto_max": 600000000,
+    "dias_atras": 15,
+    "score_minimo": 70,
+    "codigos_unspsc": ["811120", "811121", "811617", "811615", "811616", "432226"],
+    "palabras_clave": ["satelital", "starlink", "conectividad a internet"],
+    "perfil": "Empresa proveedora de servicios de Internet empresarial, conectividad satelital (Starlink), enlaces de datos, alojamiento web, servicios en la nube (Cloud/SaaS) y administración de infraestructura de telecomunicaciones."
+  },
+  {
+    "id": "Carbotek",
+    "nombre": "Empresa de Suministros y Equipos de Impresión",
+    "activa": true,
+    "presupuesto_min": 10000000,
+    "presupuesto_max": 250000000,
+    "dias_atras": 15,
+    "score_minimo": 70,
+    "codigos_unspsc": ["441031", "811118", "432121"],
+    "palabras_clave": ["toner", "fusor", "unidad de imagen", "mantenimiento de impresoras"],
+    "perfil": "Empresa especializada en suministro de consumibles de impresión (tóner, unidades fusoras, tambores), repuestos electrónicos y mantenimiento preventivo/correctivo de impresoras corporativas."
+  }
+]
