@@ -100,9 +100,9 @@ def consultar_secop(empresa):
         "lower(nombre_del_procedimiento) like '%cotizaci%'"
     )
 
-    filtro_vigencia = (
-        f"fecha_de_publicacion_del >= '{fecha_limite}' AND "
-        "modalidad_de_contratacion not like '%Directa%' AND "
+filtro_vigencia = (
+        f"fecha_de_ultima_publicaci >= '{fecha_limite}' AND "
+        "(modalidad_de_contratacion not like '%Directa%' OR modalidad_de_contratacion IS NULL) AND "
         "estado_del_procedimiento != 'Adjudicado' AND "
         "estado_del_procedimiento != 'Cancelado' AND "
         f"({condicion_etapa_temprana})"
@@ -253,7 +253,10 @@ def ejecutar():
     for empresa in empresas_a_procesar:
         total_viables += procesar_empresa(empresa)
 
-    print(f"\n🏁 Ejecución finalizada. Total oportunidades enviadas a Telegram: {total_viables}")
+    resumen = f"🏁 Ejecución finalizada. Total oportunidades enviadas a Telegram: {total_viables}"
+    print(f"\n{resumen}")
+    if total_viables == 0:
+        enviar_telegram("🤖 <b>Monitor SECOP II:</b> Ejecución diaria completada sin novedades hoy.")
 
 if __name__ == "__main__":
     ejecutar()
