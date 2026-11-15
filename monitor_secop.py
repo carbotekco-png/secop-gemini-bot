@@ -100,7 +100,7 @@ def consultar_secop(empresa):
         "lower(nombre_del_procedimiento) like '%cotizaci%'"
     )
 
-filtro_vigencia = (
+    filtro_vigencia = (
         f"fecha_de_ultima_publicaci >= '{fecha_limite}' AND "
         "(modalidad_de_contratacion not like '%Directa%' OR modalidad_de_contratacion IS NULL) AND "
         "estado_del_procedimiento != 'Adjudicado' AND "
@@ -110,7 +110,7 @@ filtro_vigencia = (
 
     params = {
         "$where": f"{filtro_vigencia} AND {filtro_presupuesto} AND ({filtro_tema})",
-        "$order": "fecha_de_publicacion_del DESC",
+        "$order": "fecha_de_ultima_publicaci DESC",
         "$limit": 40
     }
     
@@ -222,7 +222,6 @@ def procesar_empresa(empresa):
             print(f"   ✅ Viable [{analisis.score_afinidad}/100]: {referencia}")
             oportunidades_viables.append(p)
 
-            # Formatear mensaje seguro en HTML para Telegram
             msg = (
                 f"🚨 <b>OPORTUNIDAD SECOP II ({analisis.score_afinidad}/100)</b>\n"
                 f"🏢 <b>Empresa:</b> {html.escape(nombre)}\n"
