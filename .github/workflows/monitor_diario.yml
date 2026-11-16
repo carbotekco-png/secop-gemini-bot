@@ -1,8 +1,6 @@
 name: Monitor Diario SECOP II
 
 on:
-  schedule:
-    - cron: '30 12 * * *'
   workflow_dispatch:
 
 jobs:
