@@ -53,6 +53,21 @@ def cargar_empresas(ruta_archivo="empresas.json"):
     with open(ruta_archivo, "r", encoding="utf-8") as f:
         return json.load(f)
 
+def cargar_enviados(ruta_archivo="enviados.json"):
+    """Carga el historial de procesos ya notificados para evitar duplicados."""
+    if os.path.exists(ruta_archivo):
+        try:
+            with open(ruta_archivo, "r", encoding="utf-8") as f:
+                return set(json.load(f))
+        except Exception:
+            return set()
+    return set()
+
+def guardar_enviados(enviados_set, ruta_archivo="enviados.json"):
+    """Guarda el historial actualizado de procesos enviados."""
+    with open(ruta_archivo, "w", encoding="utf-8") as f:
+        json.dump(sorted(list(enviados_set)), f, indent=2, ensure_ascii=False)
+
 def consultar_secop(empresa):
     """Consulta procesos vigentes en SECOP II usando los criterios específicos de una empresa."""
     endpoint = "https://www.datos.gov.co/resource/p6dx-8zbt.json"
@@ -189,9 +204,10 @@ def evaluar_con_gemini(proceso, empresa):
         riesgos_o_requisitos_clave=[]
     )
 
-def procesar_empresa(empresa):
+def procesar_empresa(empresa, enviados_set):
     """Ejecuta el ciclo de búsqueda, análisis y alerta en Telegram para una empresa."""
     nombre = empresa.get("nombre", "Empresa sin nombre")
+    emp_id = empresa.get("id", nombre)
     score_min = empresa.get("score_minimo", 70)
 
     print(f"\n🏢 Analizando empresa: {nombre}...")
@@ -201,9 +217,15 @@ def procesar_empresa(empresa):
     oportunidades_viables = []
 
     for p in procesos:
+        referencia = p.get('referencia_del_proceso') or 'Sin ref'
+        clave_unica = f"{emp_id}::{referencia}"
+
+        if clave_unica in enviados_set:
+            print(f"   ⏭️ Omitido (ya enviado previamente): {referencia}")
+            continue
+
         fecha_pub = (p.get('fecha_de_publicacion_del') or 'Sin fecha')[:10]
         fecha_cierre = (p.get('fecha_de_recepcion_de') or 'Por definir')[:10]
-        referencia = p.get('referencia_del_proceso') or 'Sin ref'
         titulo = p.get('nombre_del_procedimiento') or 'Sin título especificado'
         entidad = p.get('nombre_entidad') or 'Desconocida'
         modalidad = p.get('modalidad_de_contratacion') or 'Sin modalidad'
@@ -222,6 +244,11 @@ def procesar_empresa(empresa):
             print(f"   ✅ Viable [{analisis.score_afinidad}/100]: {referencia}")
             oportunidades_viables.append(p)
 
+            riesgos_html = ""
+            if analisis.riesgos_o_requisitos_clave:
+                items = "\n".join(f"  • {html.escape(r)}" for r in analisis.riesgos_o_requisitos_clave)
+                riesgos_html = f"\n\n⚠️ <b>Puntos críticos a revisar:</b>\n{items}"
+
             msg = (
                 f"🚨 <b>OPORTUNIDAD SECOP II ({analisis.score_afinidad}/100)</b>\n"
                 f"🏢 <b>Empresa:</b> {html.escape(nombre)}\n"
@@ -231,16 +258,19 @@ def procesar_empresa(empresa):
                 f"📋 <b>Fase / Mod:</b> {html.escape(fase)} | {html.escape(modalidad)}\n"
                 f"📅 <b>Pub:</b> {fecha_pub} | <b>Cierre:</b> {fecha_cierre}\n\n"
                 f"📝 <b>Objeto:</b> {html.escape(titulo[:300])}\n\n"
-                f"💡 <b>Análisis IA:</b> {html.escape(analisis.analisis_justificacion)}\n\n"
+                f"💡 <b>Análisis IA:</b> {html.escape(analisis.analisis_justificacion)}"
+                f"{riesgos_html}\n\n"
                 f"🔗 <a href=\"{url_proceso}\">Ver proceso en SECOP II</a>"
             )
             enviar_telegram(msg)
+            enviados_set.add(clave_unica)
             time.sleep(1)
 
     return len(oportunidades_viables)
 
 def ejecutar():
     empresas = cargar_empresas("empresas.json")
+    enviados_set = cargar_enviados("enviados.json")
     filtro_id = sys.argv[1].lower() if len(sys.argv) > 1 else None
 
     empresas_a_procesar = [
@@ -250,7 +280,9 @@ def ejecutar():
 
     total_viables = 0
     for empresa in empresas_a_procesar:
-        total_viables += procesar_empresa(empresa)
+        total_viables += procesar_empresa(empresa, enviados_set)
+
+    guardar_enviados(enviados_set, "enviados.json")
 
     resumen = f"🏁 Ejecución finalizada. Total oportunidades enviadas a Telegram: {total_viables}"
     print(f"\n{resumen}")
