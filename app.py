@@ -4,6 +4,12 @@ import html
 import base64
 import requests
 import streamlit as st
+
+# Cargar secretos de Streamlit en el entorno ANTES de importar monitor_secop
+for key, value in st.secrets.items():
+    if isinstance(value, str):
+        os.environ[key] = value
+
 from monitor_secop import consultar_secop, evaluar_con_gemini, enviar_telegram
 
 st.set_page_config(page_title="Monitor SECOP II", page_icon="🏛️", layout="wide")
